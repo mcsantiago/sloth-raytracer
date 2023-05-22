@@ -9,11 +9,13 @@
 #include "geometry.h"
 
 struct Sphere {
+    Sphere(Vec3f position, float radius, Vec3i color, float specular);
     Sphere(Vec3f position, float radius, Vec3i color);
 
     Vec3f position;
     Vec3i color;
     float radius;
+    float specular;
 };
 
 enum class LightType {

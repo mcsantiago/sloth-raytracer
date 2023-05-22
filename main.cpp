@@ -10,7 +10,7 @@ Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float 
 
 Vec2f IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere);
 
-float ComputeLighting(Vec3f P, Vec3f N, Scene &scene);
+float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene);
 
 int main() {
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
@@ -20,10 +20,10 @@ int main() {
 //    std::ifstream f("test_scene.json");
 //    json data = json::parse(f);
     Scene scene(1, 1, 1);
-    scene.spheres.emplace_back(Vec3f(0, -1, 3), 1, Vec3i(255, 0, 0));
-    scene.spheres.emplace_back(Vec3f(2, 0 , 4), 1, Vec3i(0, 0, 255));
-    scene.spheres.emplace_back(Vec3f(-2, 0 , 4), 1, Vec3i(0, 255, 0));
-    scene.spheres.emplace_back(Vec3f(0, -5001, 0), 5000, Vec3i(255, 255, 0));
+    scene.spheres.emplace_back(Vec3f(0, -1, 3), 1, Vec3i(255, 0, 0), 500);
+    scene.spheres.emplace_back(Vec3f(2, 0 , 4), 1, Vec3i(0, 0, 255), 500);
+    scene.spheres.emplace_back(Vec3f(-2, 0 , 4), 1, Vec3i(0, 255, 0), 10);
+    scene.spheres.emplace_back(Vec3f(0, -5001, 0), 5000, Vec3i(255, 255, 0), 1000);
 
     scene.lights.emplace_back(LightType::AMBIENT, Vec3f(), 0.2);
     scene.lights.emplace_back(LightType::POINT, Vec3f(2, 1, 0), 0.6);
@@ -68,15 +68,15 @@ Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
     Sphere closest_sphere = scene.spheres.at(closest_sphere_idx);
 //    std::cout << "closest sphere: " << closest_sphere_idx << std::endl;
     Vec3f P = O + (D * closest_t);
-    Vec3f N = P - closest_sphere.position;
-    float intensity = ComputeLighting(P, N, scene);
-    return {int(intensity * closest_sphere.color.x),
-            int(intensity * closest_sphere.color.y),
-            int(intensity * closest_sphere.color.z),
+    Vec3f N = (P - closest_sphere.position).normalize();
+    float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular, scene);
+    return {std::min(int(intensity * closest_sphere.color.x), 255),
+            std::min(int(intensity * closest_sphere.color.y), 255),
+            std::min(int(intensity * closest_sphere.color.z), 255),
             255};
 }
 
-float ComputeLighting(Vec3f P, Vec3f N, Scene &scene) {
+float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene) {
     float intensity = 0;
     for (auto light : scene.lights) {
         if (light.type == LightType::AMBIENT) {
@@ -92,6 +92,14 @@ float ComputeLighting(Vec3f P, Vec3f N, Scene &scene) {
             float n_dot_l = N*L;
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l/(N.norm() * L.norm());
+            }
+
+            if (s != -1) {
+                Vec3f R = N * 2 * (N*L) - L;
+                float r_dot_v = R*V;
+                if (r_dot_v > 0) {
+                    intensity += light.intensity * std::pow(r_dot_v/(R.norm() * V.norm()), s);
+                }
             }
         }
     }
