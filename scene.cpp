@@ -7,5 +7,7 @@
 Scene::Scene(float width, float height, float depth) :
 viewport_width(width), viewport_height(height), viewport_depth(depth){}
 
-Sphere::Sphere(float x, float y, float z, float radius, int r, int g, int b) : x(x), y(y), z(z), radius(radius), r(r), g(g),
-                                                                       b(b) {}
+Sphere::Sphere(Vec3f position, float radius, Vec3i color) : position(position), radius(radius), color(color) {}
+
+Light::Light(LightType type, const Vec3f &position, float intensity) : type(type), position(position),
+                                                                       intensity(intensity) {}

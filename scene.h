@@ -6,12 +6,29 @@
 #define SLOTH_RAYTRACER_SCENE_H
 
 #include <vector>
+#include "geometry.h"
 
 struct Sphere {
-    Sphere(float x, float y, float z, float radius, int r, int g, int b);
+    Sphere(Vec3f position, float radius, Vec3i color);
 
-    float x, y, z, radius;
-    int r, g, b;
+    Vec3f position;
+    Vec3i color;
+    float radius;
+};
+
+enum class LightType {
+    AMBIENT = 0,
+    POINT = 1,
+    DIRECTIONAL = 2
+};
+
+struct Light {
+
+    Light(LightType type, const Vec3f &position, float intensity);
+
+    LightType type;
+    Vec3f position;
+    float intensity;
 };
 
 struct Scene {
@@ -19,6 +36,7 @@ struct Scene {
 
     float viewport_width, viewport_height, viewport_depth;
     std::vector<Sphere> spheres;
+    std::vector<Light> lights;
 };
 
 #endif //SLOTH_RAYTRACER_SCENE_H
