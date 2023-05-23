@@ -3,6 +3,8 @@
 #include "scene.h"
 #include "image.h"
 
+const Color BACKGROUND_COLOR = {135, 206, 235, 255};
+//const Color BACKGROUND_COLOR = {0, 0, 0, 0};
 
 Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene);
 
@@ -11,6 +13,8 @@ Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float 
 Vec2f IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere);
 
 float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene);
+
+std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene);
 
 int main() {
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
@@ -31,6 +35,8 @@ int main() {
 
     Vec3f O = Vec3f(0, 0, 0);
 
+    clock_t t_start;
+
     for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
         for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
 //            std::cout << "x: " << x << " y: " << y << std::endl;
@@ -41,32 +47,20 @@ int main() {
         }
     }
 
+    printf("Time taken to complete ray tracing: %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
+
     std::cout << "Writing to file: output.png" << std::endl;
     canvas.writeToDiskAsPNG("output.png");
     return 0;
 }
 
 Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
-    float closest_t = INT32_MAX;
-    int closest_sphere_idx = -1;
-    for (int i = 0; i < scene.spheres.size(); i++) {
-        Vec2f t = IntersectRaySphere(O, D, scene.spheres.at(i));
-        if (t.x >= t_min && t.x <= t_max && t.x < closest_t) {
-            closest_t = t.x;
-            closest_sphere_idx = i;
-        }
-        if (t.y >= t_min && t.y <= t_max && t.y < closest_t) {
-            closest_t = t.y;
-            closest_sphere_idx = i;
-        }
+    auto intersection_pair= ClosestIntersection(O, D, t_min, t_max, scene);
+    if (intersection_pair.first == -1) {
+        return {0,0,0,0};
     }
-
-    if (closest_sphere_idx == -1) {
-        return {0, 0, 0, 0};
-    }
-
-    Sphere closest_sphere = scene.spheres.at(closest_sphere_idx);
-//    std::cout << "closest sphere: " << closest_sphere_idx << std::endl;
+    Sphere& closest_sphere = scene.spheres[intersection_pair.first];
+    float closest_t = intersection_pair.second;
     Vec3f P = O + (D * closest_t);
     Vec3f N = (P - closest_sphere.position).normalize();
     float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular, scene);
@@ -128,4 +122,26 @@ Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float 
     return {(float)x * (viewport_width/(float)canvas_width),
             (float)y * (viewport_height/(float)canvas_height),
             viewport_distance};
+}
+
+std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
+    float closest_t = INT32_MAX;
+    int closest_sphere_idx = -1;
+    for (int i = 0; i < scene.spheres.size(); i++) {
+        Vec2f t = IntersectRaySphere(O, D, scene.spheres.at(i));
+        if (t.x >= t_min && t.x <= t_max && t.x < closest_t) {
+            closest_t = t.x;
+            closest_sphere_idx = i;
+        }
+        if (t.y >= t_min && t.y <= t_max && t.y < closest_t) {
+            closest_t = t.y;
+            closest_sphere_idx = i;
+        }
+    }
+
+    if (closest_sphere_idx == -1) {
+        return std::make_pair(-1, 0);
+    }
+
+    return std::make_pair(closest_sphere_idx, closest_t);
 }
