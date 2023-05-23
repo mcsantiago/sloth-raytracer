@@ -14,7 +14,7 @@ Vec2f IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere);
 
 float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene);
 
-std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene);
+std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene);
 
 int main() {
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
@@ -57,7 +57,7 @@ int main() {
 Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
     auto intersection_pair= ClosestIntersection(O, D, t_min, t_max, scene);
     if (intersection_pair.first == -1) {
-        return {0,0,0,0};
+        return BACKGROUND_COLOR;
     }
     Sphere& closest_sphere = scene.spheres[intersection_pair.first];
     float closest_t = intersection_pair.second;
@@ -77,17 +77,28 @@ float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene) {
             intensity += light.intensity;
         } else {
             Vec3f L;
+            float t_max = 1;
             if (light.type == LightType::POINT) {
                 L = light.position - P;
+                t_max = 1;
             } else if (light.type == LightType::DIRECTIONAL) {
                 L = light.position; // Re-using position to indicate direction... refactor?
+                t_max = INT32_MAX;
             }
 
+            // Shadows
+            auto intersection_pair = ClosestIntersection(P, L, 0.001, t_max, scene);
+            if (intersection_pair.first != -1) {
+                continue;
+            }
+
+            // Diffuse Reflection
             float n_dot_l = N*L;
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l/(N.norm() * L.norm());
             }
 
+            // Specular Reflection
             if (s != -1) {
                 Vec3f R = N * 2 * (N*L) - L;
                 float r_dot_v = R*V;
@@ -124,7 +135,7 @@ Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float 
             viewport_distance};
 }
 
-std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
+std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene) {
     float closest_t = INT32_MAX;
     int closest_sphere_idx = -1;
     for (int i = 0; i < scene.spheres.size(); i++) {
