@@ -7,8 +7,8 @@
 Scene::Scene(float width, float height, float depth) :
 viewport_width(width), viewport_height(height), viewport_depth(depth){}
 
-Sphere::Sphere(Vec3f position, float radius, Vec3i color, float specular) :
-position(position), radius(radius), color(color), specular(specular) {}
+Sphere::Sphere(Vec3f position, float radius, Vec3i color, float specular, float reflective) :
+position(position), radius(radius), color(color), specular(specular), reflective(reflective) {}
 
 Sphere::Sphere(Vec3f position, float radius, Vec3i color) :
         position(position), radius(radius), color(color), specular(-1) {}

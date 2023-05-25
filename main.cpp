@@ -3,10 +3,12 @@
 #include "scene.h"
 #include "image.h"
 
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
 const Color BACKGROUND_COLOR = {135, 206, 235, 255};
 //const Color BACKGROUND_COLOR = {0, 0, 0, 0};
 
-Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene);
+Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num_bounces);
 
 Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float viewport_width, float viewport_height, float viewport_distance);
 
@@ -16,6 +18,9 @@ float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene);
 
 std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene);
 
+Vec3f ReflectRay(Vec3f R, Vec3f N);
+
+
 int main() {
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
     Image canvas = Image(800, 600, Channel::RGBA);
@@ -24,10 +29,10 @@ int main() {
 //    std::ifstream f("test_scene.json");
 //    json data = json::parse(f);
     Scene scene(1, 1, 1);
-    scene.spheres.emplace_back(Vec3f(0, -1, 3), 1, Vec3i(255, 0, 0), 500);
-    scene.spheres.emplace_back(Vec3f(2, 0 , 4), 1, Vec3i(0, 0, 255), 500);
-    scene.spheres.emplace_back(Vec3f(-2, 0 , 4), 1, Vec3i(0, 255, 0), 10);
-    scene.spheres.emplace_back(Vec3f(0, -5001, 0), 5000, Vec3i(255, 255, 0), 1000);
+    scene.spheres.emplace_back(Vec3f(0, -1, 3), 1, Vec3i(255, 0, 0), 500, 0.2);
+    scene.spheres.emplace_back(Vec3f(2, 0 , 4), 1, Vec3i(0, 0, 255), 500, 0.3);
+    scene.spheres.emplace_back(Vec3f(-2, 0 , 4), 1, Vec3i(0, 255, 0), 10, 0.4);
+    scene.spheres.emplace_back(Vec3f(0, -5001, 0), 5000, Vec3i(255, 255, 0), 1000, 0.5);
 
     scene.lights.emplace_back(LightType::AMBIENT, Vec3f(), 0.2);
     scene.lights.emplace_back(LightType::POINT, Vec3f(2, 1, 0), 0.6);
@@ -35,14 +40,14 @@ int main() {
 
     Vec3f O = Vec3f(0, 0, 0);
 
-    clock_t t_start;
+    clock_t t_start = clock();
 
     for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
         for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
 //            std::cout << "x: " << x << " y: " << y << std::endl;
             Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight(), scene.viewport_width, scene.viewport_height, scene.viewport_height);
 //            std::cout << D << std::endl;
-            Color color = TraceRay(O, D, 1, INT32_MAX, scene);
+            Color color = TraceRay(O, D, 1, INT32_MAX, scene, 100);
             canvas.setPixel(x, y, color);
         }
     }
@@ -54,7 +59,7 @@ int main() {
     return 0;
 }
 
-Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
+Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num_bounces) {
     auto intersection_pair= ClosestIntersection(O, D, t_min, t_max, scene);
     if (intersection_pair.first == -1) {
         return BACKGROUND_COLOR;
@@ -64,10 +69,34 @@ Color TraceRay(Vec3f O, Vec3f D, int t_min, int t_max, Scene &scene) {
     Vec3f P = O + (D * closest_t);
     Vec3f N = (P - closest_sphere.position).normalize();
     float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular, scene);
-    return {std::min(int(intensity * closest_sphere.color.x), 255),
+    Color local_color = {std::min(int(intensity * closest_sphere.color.x), 255),
             std::min(int(intensity * closest_sphere.color.y), 255),
             std::min(int(intensity * closest_sphere.color.z), 255),
             255};
+
+    if (closest_sphere.reflective <= 0 || num_bounces <= 0) {
+        return local_color;
+    }
+
+    Vec3f R = ReflectRay(D*-1, N);
+    Color reflected_color = TraceRay(P, R, 0.001, INT32_MAX, scene, num_bounces - 1);
+    printf("Local color: (%d,%d,%d)\tReflected color: (%d,%d,%d)\tFinal color: (%d,%d,%d)\n",
+           local_color.r,
+           local_color.g,
+           local_color.b,
+           reflected_color.r,
+           reflected_color.g,
+           reflected_color.b,
+           int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)),
+           int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)),
+           int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)));
+
+    return {
+        std::min(int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)), 255),
+        std::min(int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)), 255),
+        std::min(int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)), 255),
+        255
+    };
 }
 
 float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene) {
@@ -100,7 +129,7 @@ float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene) {
 
             // Specular Reflection
             if (s != -1) {
-                Vec3f R = N * 2 * (N*L) - L;
+                Vec3f R = ReflectRay(L, N);
                 float r_dot_v = R*V;
                 if (r_dot_v > 0) {
                     intensity += light.intensity * std::pow(r_dot_v/(R.norm() * V.norm()), s);
@@ -155,4 +184,15 @@ std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t
     }
 
     return std::make_pair(closest_sphere_idx, closest_t);
+}
+
+Vec3f ReflectRay(Vec3f R, Vec3f N) {
+    Vec3f reflected_ray = N * 2 * (N*R) - R;
+    /*
+    printf("Original Ray: (%.2f,%.2f,%.2f)\tNormal: (%.2f,%.2f,%.2f)\tReflected Ray: (%.2f,%.2f,%.2f)\n",
+            R.x, R.y, R.z,
+            N.x, N.y, N.z,
+            reflected_ray.x, reflected_ray.y, reflected_ray.z);
+    */
+    return reflected_ray;
 }
