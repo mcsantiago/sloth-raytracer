@@ -9,7 +9,8 @@ const int SCREEN_HEIGHT = 600;
 const Color BACKGROUND_COLOR = {135, 206, 235, 255};
 const float INF = std::numeric_limits<float>::infinity();
 
-//const Color BACKGROUND_COLOR = {0, 0, 0, 0};
+bool DEBUG_MODE = false;
+
 
 Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num_bounces);
 
@@ -24,7 +25,23 @@ std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t
 Vec3f ReflectRay(Vec3f R, Vec3f N);
 
 
-int main() {
+int main(int argc, char* argv[]) {
+    std::string output_file = "output.png";
+
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--debug") {
+            DEBUG_MODE = true;
+        }
+        if (arg == "--output_file") {
+            if (i+1 >= argc) {
+                std::cerr << "Expected file name for --output_file" << std::endl;
+                return -1;
+            }
+            output_file = argv[i+1];
+        }
+    }
+
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
     Image canvas = Image(800, 600, Channel::RGBA);
 
@@ -57,8 +74,9 @@ int main() {
 
     printf("Time taken to complete ray tracing: %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
 
-    std::cout << "Writing to file: output.png" << std::endl;
-    canvas.writeToDiskAsPNG("output.png");
+    //std::cout << "Writing to file: output.png" << std::endl;
+    printf("Writing to file: %s\n", output_file.c_str());
+    canvas.writeToDiskAsPNG(output_file.c_str());
     return 0;
 }
 
@@ -83,16 +101,18 @@ Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num
 
     Vec3f R = ReflectRay(D*-1, N);
     Color reflected_color = TraceRay(P, R, 0.001, INF, scene, num_bounces - 1);
-    printf("Local color: (%d,%d,%d)\tReflected color: (%d,%d,%d)\tFinal color: (%d,%d,%d)\n",
-           local_color.r,
-           local_color.g,
-           local_color.b,
-           reflected_color.r,
-           reflected_color.g,
-           reflected_color.b,
-           int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)),
-           int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)),
-           int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)));
+    if (DEBUG_MODE) {
+        printf("Local color: (%d,%d,%d)\tReflected color: (%d,%d,%d)\tFinal color: (%d,%d,%d)\n",
+               local_color.r,
+               local_color.g,
+               local_color.b,
+               reflected_color.r,
+               reflected_color.g,
+               reflected_color.b,
+               int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)),
+               int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)),
+               int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)));
+    }
 
     return {
         std::min(int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)), 255),
@@ -192,10 +212,12 @@ std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t
 Vec3f ReflectRay(Vec3f R, Vec3f N) {
     Vec3f reflected_ray = N * 2 * (N*R) - R;
     /*
-    printf("Original Ray: (%.2f,%.2f,%.2f)\tNormal: (%.2f,%.2f,%.2f)\tReflected Ray: (%.2f,%.2f,%.2f)\n",
-            R.x, R.y, R.z,
-            N.x, N.y, N.z,
-            reflected_ray.x, reflected_ray.y, reflected_ray.z);
+    if (DEBUG_MODE) {
+        printf("Original Ray: (%.2f,%.2f,%.2f)\tNormal: (%.2f,%.2f,%.2f)\tReflected Ray: (%.2f,%.2f,%.2f)\n",
+                R.x, R.y, R.z,
+                N.x, N.y, N.z,
+                reflected_ray.x, reflected_ray.y, reflected_ray.z);
+    }
     */
     return reflected_ray;
 }
