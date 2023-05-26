@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include "geometry.h"
 #include "scene.h"
 #include "image.h"
@@ -6,6 +7,8 @@
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 const Color BACKGROUND_COLOR = {135, 206, 235, 255};
+const float INF = std::numeric_limits<float>::infinity();
+
 //const Color BACKGROUND_COLOR = {0, 0, 0, 0};
 
 Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num_bounces);
@@ -47,7 +50,7 @@ int main() {
 //            std::cout << "x: " << x << " y: " << y << std::endl;
             Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight(), scene.viewport_width, scene.viewport_height, scene.viewport_height);
 //            std::cout << D << std::endl;
-            Color color = TraceRay(O, D, 1, INT32_MAX, scene, 100);
+            Color color = TraceRay(O, D, 1, INF, scene, 100);
             canvas.setPixel(x, y, color);
         }
     }
@@ -79,7 +82,7 @@ Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num
     }
 
     Vec3f R = ReflectRay(D*-1, N);
-    Color reflected_color = TraceRay(P, R, 0.001, INT32_MAX, scene, num_bounces - 1);
+    Color reflected_color = TraceRay(P, R, 0.001, INF, scene, num_bounces - 1);
     printf("Local color: (%d,%d,%d)\tReflected color: (%d,%d,%d)\tFinal color: (%d,%d,%d)\n",
            local_color.r,
            local_color.g,
@@ -112,7 +115,7 @@ float ComputeLighting(Vec3f P, Vec3f N, Vec3f V, float s, Scene &scene) {
                 t_max = 1;
             } else if (light.type == LightType::DIRECTIONAL) {
                 L = light.position; // Re-using position to indicate direction... refactor?
-                t_max = INT32_MAX;
+                t_max = INF;
             }
 
             // Shadows
@@ -150,7 +153,7 @@ Vec2f IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere) {
     float discriminant = b*b - 4*a*c;
     //std::cout << "a: " << a << " b: " << b << " c: " << c << " discriminant: " << discriminant << std::endl;
     if (discriminant < 0) {
-        return {INT32_MAX, INT32_MAX};
+        return {INF, INF};
     }
 
     float t1 = (-1.*b + sqrt(discriminant)) / (2.*a);
@@ -165,7 +168,7 @@ Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float 
 }
 
 std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene) {
-    float closest_t = INT32_MAX;
+    float closest_t = INF;
     int closest_sphere_idx = -1;
     for (int i = 0; i < scene.spheres.size(); i++) {
         Vec2f t = IntersectRaySphere(O, D, scene.spheres.at(i));
