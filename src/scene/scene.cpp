@@ -7,10 +7,10 @@
 Scene::Scene(float width, float height, float depth) :
 viewport_width(width), viewport_height(height), viewport_depth(depth){}
 
-Sphere::Sphere(Vec3f position, float radius, Vec3i color, float specular, float reflective) :
+Sphere::Sphere(Vec3f position, float radius, Color color, float specular, float reflective) :
 position(position), radius(radius), color(color), specular(specular), reflective(reflective) {}
 
-Sphere::Sphere(Vec3f position, float radius, Vec3i color) :
+Sphere::Sphere(Vec3f position, float radius, Color color) :
         position(position), radius(radius), color(color), specular(-1) {}
 
 Light::Light(LightType type, const Vec3f &position, float intensity) : type(type), position(position),

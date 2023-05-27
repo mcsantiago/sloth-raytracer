@@ -10,16 +10,7 @@ typedef unsigned char byte;
 #endif
 
 #include <string>
-
-struct Color {
-    Color(byte r, byte g, byte b, byte a)
-    : r(r), g(g), b(b), a(a) {}
-
-    byte r;
-    byte g;
-    byte b;
-    byte a;
-};
+#include "color.h"
 
 enum Channel {
     RGB = 3,

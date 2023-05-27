@@ -6,17 +6,18 @@
 #define SLOTH_RAYTRACER_SCENE_H
 
 #include <vector>
-#include "geometry.h"
+#include "../geometry/geometry.h"
+#include "../image/color.h"
 
 struct Sphere {
-    Sphere(Vec3f position, float radius, Vec3i color, float specular, float reflective=0);
-    Sphere(Vec3f position, float radius, Vec3i color);
+    Sphere(Vec3f position, float radius, Color color, float specular, float reflective=0);
+    Sphere(Vec3f position, float radius, Color color);
 
     Vec3f position;
-    Vec3i color;
+    Color color;
     float radius;
     float specular;
-    float reflective;
+    float reflective{};
 };
 
 enum class LightType {

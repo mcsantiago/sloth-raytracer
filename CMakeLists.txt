@@ -22,6 +22,16 @@ if(NOT json_POPULATED) # Have we downloaded json yet?
     add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
 endif()
 
-add_executable(sloth_raytracer main.cpp image.h include/stb_image_write.h image.cpp geometry.h scene.h scene.cpp)
+add_executable(
+    sloth_raytracer 
+    src/main/main.cpp 
+    src/image/image.h 
+    src/image/image.cpp 
+    src/geometry/geometry.h 
+    src/scene/scene.h 
+    src/scene/scene.cpp
+    src/raytracing_engine/raytracing_engine.cpp
+    include/stb_image_write.h
+)
 
 target_link_libraries(sloth_raytracer ${SDL2_LIBRARIES} nlohmann_json::nlohmann_json)

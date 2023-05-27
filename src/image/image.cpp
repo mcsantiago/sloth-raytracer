@@ -4,7 +4,7 @@
 
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "include/stb_image_write.h"
+#include "../../include/stb_image_write.h"
 #include "image.h"
 
 Image::Image(int width, int height, Channel channels)
