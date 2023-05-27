@@ -6,8 +6,8 @@
 
 const float INF = std::numeric_limits<float>::infinity();
 
-RayTracingEngine::RayTracingEngine(Scene &scene, Color background_color)
-: scene_(scene), background_color_(background_color) {}
+RayTracingEngine::RayTracingEngine(Scene &scene, Camera &camera, Color background_color)
+: scene_(scene), background_color_(background_color), camera_(camera) {}
 
 void RayTracingEngine::setScene(Scene &scene) {
     this->scene_ = scene;
@@ -133,11 +133,16 @@ Vec3f RayTracingEngine::ReflectRay(Vec3f R, Vec3f N) {
 
 void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
     clock_t t_start = clock();
-    Vec3f O = {0,0,0};
+    Vec3f O = camera_.get_position();
 
     for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
         for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
-            Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight(), scene_.viewport_width, scene_.viewport_height, scene_.viewport_height);
+            Vec3f D = CanvasToViewport(x, y,
+                                       canvas.getWidth(),
+                                       canvas.getHeight(),
+                                       camera_.get_viewport_width(),
+                                       camera_.get_viewport_height(),
+                                       camera_.get_viewport_distance());
             Color color = TraceRay(O, D, 1, INF, num_bounces);
             canvas.setPixel(x, y, color);
         }

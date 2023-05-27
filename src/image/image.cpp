@@ -37,7 +37,7 @@ void Image::setPixel(int x, int y, Color color) {
 
 void Image::flipVertically() {
     int rowSize = width * static_cast<int>(channels);
-    auto tempRow = new byte[rowSize];
+    auto tempRow = new std::byte[rowSize];
 
     for (int y = 0; y < height / 2; ++y) {
         int topRowIndex = y * rowSize;

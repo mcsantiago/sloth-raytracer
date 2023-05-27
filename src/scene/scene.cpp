@@ -4,8 +4,7 @@
 
 #include "scene.h"
 
-Scene::Scene(float width, float height, float depth) :
-viewport_width(width), viewport_height(height), viewport_depth(depth){}
+Scene::Scene()= default;
 
 Sphere::Sphere(Vec3f position, float radius, Color color, float specular, float reflective) :
 position(position), radius(radius), color(color), specular(specular), reflective(reflective) {}

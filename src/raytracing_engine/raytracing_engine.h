@@ -9,14 +9,16 @@
 #include "../image/image.h"
 #include "../scene/scene.h"
 #include "../geometry/geometry.h"
+#include "../scene/camera.h"
 
 class RayTracingEngine {
 private:
     Scene scene_;
     Color background_color_;
+    Camera camera_;
 
 public:
-    explicit RayTracingEngine(Scene &scene, Color background_color=Color(135, 206, 235, 255));
+    explicit RayTracingEngine(Scene &scene, Camera &camera, Color background_color=Color(135, 206, 235, 255));
 
     void setScene(Scene &scene);
     void setBackgroundColor(Color color);

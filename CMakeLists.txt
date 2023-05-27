@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(sloth_raytracer)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Include SDL2
 list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/Cellar/sdl2/2.26.5/include/")
@@ -31,6 +31,7 @@ add_executable(
     src/scene/scene.h 
     src/scene/scene.cpp
     src/raytracing_engine/raytracing_engine.cpp
+    src/scene/camera.h
     include/stb_image_write.h
 )
 

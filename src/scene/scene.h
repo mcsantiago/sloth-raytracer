@@ -36,9 +36,7 @@ struct Light {
 };
 
 struct Scene {
-    Scene(float width, float height, float depth);
-
-    float viewport_width, viewport_height, viewport_depth;
+    Scene();
     std::vector<Sphere> spheres;
     std::vector<Light> lights;
 };
