@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+#include <SDL2/SDL.h>
 #include "geometry.h"
 #include "scene.h"
 #include "image.h"
@@ -42,8 +43,26 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cerr << "Error initializing video" << std::endl;
+        return -2;
+    }
+
+    SDL_Window* window = SDL_CreateWindow("Raytracer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+
+    if (window == nullptr) {
+        std::cerr << "Error creating window" << std::endl;
+        return -3;
+    }
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    if (renderer == nullptr) {
+        return -4;
+    }
+
     std::cout << "Sloth: It's ray.. tracing.. time... :D" << std::endl;
-    Image canvas = Image(800, 600, Channel::RGBA);
+    Image canvas = Image(SCREEN_WIDTH, SCREEN_HEIGHT, Channel::RGBA);
 
     std::cout << "Reading test scene file" << std::endl;
 //    std::ifstream f("test_scene.json");
@@ -60,23 +79,52 @@ int main(int argc, char* argv[]) {
 
     Vec3f O = Vec3f(0, 0, 0);
 
-    clock_t t_start = clock();
+    // Create an SDL_Texture.
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
-        for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
-//            std::cout << "x: " << x << " y: " << y << std::endl;
-            Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight(), scene.viewport_width, scene.viewport_height, scene.viewport_height);
-//            std::cout << D << std::endl;
-            Color color = TraceRay(O, D, 1, INF, scene, 100);
-            canvas.setPixel(x, y, color);
+    SDL_Event event;
+    bool running = true;
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
         }
-    }
 
-    printf("Time taken to complete ray tracing: %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
+        clock_t t_start = clock();
+
+        for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
+            for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
+//            std::cout << "x: " << x << " y: " << y << std::endl;
+                Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight(), scene.viewport_width, scene.viewport_height, scene.viewport_height);
+//            std::cout << D << std::endl;
+                Color color = TraceRay(O, D, 1, INF, scene, 1);
+                canvas.setPixel(x, y, color);
+            }
+        }
+
+        printf("Time taken to complete ray tracing (debug mode will affect this): %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
+
+        // Update the texture with the image data.
+        SDL_UpdateTexture(texture, nullptr, canvas.getData(), SCREEN_WIDTH*4);
+
+        // Copy the texture to the rendering context.
+        SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+
+        // Update the window to display the new rendering.
+        SDL_RenderPresent(renderer);
+        SDL_Delay(100);  // To avoid maxing out the CPU
+    }
 
     //std::cout << "Writing to file: output.png" << std::endl;
     printf("Writing to file: %s\n", output_file.c_str());
     canvas.writeToDiskAsPNG(output_file.c_str());
+
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
     return 0;
 }
 
@@ -90,9 +138,9 @@ Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num
     Vec3f P = O + (D * closest_t);
     Vec3f N = (P - closest_sphere.position).normalize();
     float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular, scene);
-    Color local_color = {std::min(int(intensity * closest_sphere.color.x), 255),
-            std::min(int(intensity * closest_sphere.color.y), 255),
-            std::min(int(intensity * closest_sphere.color.z), 255),
+    Color local_color = {static_cast<byte>(std::min(int(intensity * closest_sphere.color.x), 255)),
+            static_cast<byte>(std::min(int(intensity * closest_sphere.color.y), 255)),
+            static_cast<byte>(std::min(int(intensity * closest_sphere.color.z), 255)),
             255};
 
     if (closest_sphere.reflective <= 0 || num_bounces <= 0) {
@@ -115,9 +163,9 @@ Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, Scene &scene, int num
     }
 
     return {
-        std::min(int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)), 255),
-        std::min(int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)), 255),
-        std::min(int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)), 255),
+        static_cast<byte>(std::min(int((local_color.r * (1. - closest_sphere.reflective)) + ((float)reflected_color.r * closest_sphere.reflective)), 255)),
+        static_cast<byte>(std::min(int((local_color.g * (1. - closest_sphere.reflective)) + ((float)reflected_color.g * closest_sphere.reflective)), 255)),
+        static_cast<byte>(std::min(int((local_color.b * (1. - closest_sphere.reflective)) + ((float)reflected_color.b * closest_sphere.reflective)), 255)),
         255
     };
 }

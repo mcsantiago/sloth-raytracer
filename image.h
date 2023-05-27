@@ -5,16 +5,20 @@
 #ifndef SLOTH_RAYTRACER_IMAGE_H
 #define SLOTH_RAYTRACER_IMAGE_H
 
+#ifndef __cpp_lib_byte
+typedef unsigned char byte;
+#endif
+
 #include <string>
 
 struct Color {
-    Color(int r, int g, int b, int a)
+    Color(byte r, byte g, byte b, byte a)
     : r(r), g(g), b(b), a(a) {}
 
-    unsigned int r;
-    unsigned int g;
-    unsigned int b;
-    unsigned int a;
+    byte r;
+    byte g;
+    byte b;
+    byte a;
 };
 
 enum Channel {
@@ -26,7 +30,7 @@ class Image {
 private:
     int width, height;
     Channel channels;
-    unsigned char* data;
+    uint32_t* data;
 
 public:
     Image(int width, int height, Channel channels);
@@ -34,8 +38,8 @@ public:
 
     int getWidth() const;
     int getHeight() const;
-
     void setPixel(int x, int y, Color color);
+    uint32_t* getData() const;
 
     void flipVertically();
     void writeToDiskAsPNG(const std::string &filename);

@@ -1,5 +1,5 @@
 //
-// Created by Mac on 5/11/23.
+// Created by Matthew on 5/11/23.
 //
 
 #ifndef SLOTH_RENDERER_GEOMETRY_H

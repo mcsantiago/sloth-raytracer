@@ -3,6 +3,11 @@ project(sloth_raytracer)
 
 set(CMAKE_CXX_STANDARD 11)
 
+# Include SDL2
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/Cellar/sdl2/2.26.5/include/")
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -19,4 +24,4 @@ endif()
 
 add_executable(sloth_raytracer main.cpp image.h include/stb_image_write.h image.cpp geometry.h scene.h scene.cpp)
 
-target_link_libraries(sloth_raytracer nlohmann_json::nlohmann_json)
+target_link_libraries(sloth_raytracer ${SDL2_LIBRARIES} nlohmann_json::nlohmann_json)
