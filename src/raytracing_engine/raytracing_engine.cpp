@@ -38,10 +38,10 @@ Color RayTracingEngine::TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, int
     return local_color.CombineColor(reflected_color, closest_sphere.reflective);
 }
 
-Vec3f RayTracingEngine::CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float viewport_width, float viewport_height, float viewport_distance) {
-    return {(float)x * (viewport_width/(float)canvas_width),
-            (float)y * (viewport_height/(float)canvas_height),
-            viewport_distance};
+Vec3f RayTracingEngine::CanvasToViewport(int x, int y, int canvas_width, int canvas_height) {
+    return {(float)x * (camera_.get_viewport_width()/(float)canvas_width),
+            (float)y * (camera_.get_viewport_height()/(float)canvas_height),
+            camera_.get_viewport_distance()};
 }
 
 Vec2f RayTracingEngine::IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere) {
@@ -137,12 +137,7 @@ void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
 
     for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
         for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
-            Vec3f D = CanvasToViewport(x, y,
-                                       canvas.getWidth(),
-                                       canvas.getHeight(),
-                                       camera_.get_viewport_width(),
-                                       camera_.get_viewport_height(),
-                                       camera_.get_viewport_distance());
+            Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight());
             Color color = TraceRay(O, D, 1, INF, num_bounces);
             canvas.setPixel(x, y, color);
         }

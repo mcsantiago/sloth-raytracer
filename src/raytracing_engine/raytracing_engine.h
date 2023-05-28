@@ -25,7 +25,7 @@ public:
     
     Color TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, int num_bounces);
 
-    Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height, float viewport_width, float viewport_height, float viewport_distance);
+    Vec3f CanvasToViewport(int x, int y, int canvas_width, int canvas_height);
 
     Vec2f IntersectRaySphere(Vec3f O, Vec3f D, Sphere &sphere);
 
@@ -33,7 +33,7 @@ public:
 
     std::pair<int, float> ClosestIntersection(Vec3f O, Vec3f D, float t_min, float t_max);
 
-    Vec3f ReflectRay(Vec3f R, Vec3f N);
+    static Vec3f ReflectRay(Vec3f R, Vec3f N);
     
     void RenderScene(Image &canvas, int num_bounces);
 };
