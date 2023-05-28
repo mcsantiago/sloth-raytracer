@@ -5,6 +5,7 @@
 #ifndef RAYTRACING_ENGINE_H
 #define RAYTRACING_ENGINE_H
 
+#include <thread>
 #include "../image/color.h"
 #include "../image/image.h"
 #include "../scene/scene.h"

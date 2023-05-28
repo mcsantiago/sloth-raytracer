@@ -135,13 +135,33 @@ void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
     clock_t t_start = clock();
     Vec3f O = camera_.get_position();
 
-    for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
-        for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
-            Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight());
-            Color color = TraceRay(O, D, 1, INF, num_bounces);
-            canvas.setPixel(x, y, color);
-        }
+    const size_t thread_count = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads(thread_count);
+    size_t total_pixels = canvas.getHeight() * canvas.getWidth();
+    size_t pixels_per_thread = total_pixels / thread_count;
+
+    for (size_t i = 0; i < thread_count; i++) {
+        auto start = i * pixels_per_thread;
+        auto end = i == (thread_count - 1) ? total_pixels : start + pixels_per_thread;
+
+        threads[i] = std::thread([=, &canvas, &O, &num_bounces] {
+            for (size_t idx = start; idx < end; ++idx) {
+                int x = (idx % canvas.getWidth()) - canvas.getWidth()/2;
+                int y = (idx / canvas.getWidth()) - canvas.getHeight()/2;
+                Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight());
+                Color color = TraceRay(O, D, 1, INF, num_bounces);
+                canvas.setPixel(x, y, color);
+            }
+        });
     }
 
-    printf("Time taken to complete ray tracing (debug mode will affect this): %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
+    for(auto& thread : threads) {
+        thread.join();
+    }
+
+    printf("RAYTRACING COMPLETE\n");
+    printf("\tTime taken to complete ray tracing: %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
+    printf("\tNumber of threads: %zu\n", thread_count);
+    printf("\tPixels per thread: %zu\n", pixels_per_thread);
+    printf("\tBounces: %d\n", num_bounces);
 }

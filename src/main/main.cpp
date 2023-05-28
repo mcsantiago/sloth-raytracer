@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 
     SDL_Event event;
     bool running = true;
-    int bounces = 1;
+    int bounces = 100;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        engine.RenderScene(canvas, bounces);
+        engine.RenderScene(canvas, bounces++);
 
         // Update the texture with the image data.
         SDL_UpdateTexture(texture, nullptr, canvas.getData(), SCREEN_WIDTH*4);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 
         // Update the window to display the new rendering.
         SDL_RenderPresent(renderer);
-        SDL_Delay(1000);  // To avoid maxing out the CPU
+//        SDL_Delay(1000);  // To avoid maxing out the CPU
     }
 
     printf("Writing to file: %s\n", output_file.c_str());
