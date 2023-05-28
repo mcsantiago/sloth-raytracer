@@ -1,5 +1,8 @@
 # Sloth Ray Tracer
 
+<!-- Image from images/sample.png -->
+<img src="images/sample.png" alt="Sample Image" width="500" height="500">
+
 Sloth Ray Tracer is a simple, yet effective CPU-based ray tracing program that renders scenes of 3D spheres. This 
 rendering project is a work in-progress and is more just an educational project for myself to understand ray tracing 
 as a whole. There are no major graphics API dependencies on this project (all the rendering and mathematics is done
@@ -17,10 +20,11 @@ These instructions will guide you to install and run the Sloth Ray Tracer on you
 
 To build and run this project, you'll need the following: 
 
-- A modern C++ compiler (C++11 or later)
+- A modern C++ compiler (C++17 or later)
 - CMake (version 3.25 or later)
+- SDL2 (brew install sdl2)
 
-## Installation
+### Installation
 
 1. Clone this repository on your local machine:
 ```bash
@@ -50,12 +54,31 @@ Once compiled, you can run the ray tracer program with the following command:
 ./sloth_raytracer
 ```
 
-This will generate an image file named output.png that displays the result of the ray tracing process. The default scene
-includes a few spheres and lights that are hardcoded in the main function. Feel free to modify these values or add more 
-spheres and lights to customize your scene.
+You can also specify an output file name using the --output_file argument:
+```bash
+./sloth_raytracer --output_file output.png
+```
 
-The program will also print out the time taken to complete the ray tracing process. This is useful to get a sense of the
-performance of the ray tracer.
+This will generate an image file that displays the result of the ray tracing process. 
+The default scene includes a few spheres and lights that are hardcoded in the main function. Feel free to modify these 
+values or add more spheres and lights to customize your scene.
+
+The program will also print out the time taken to complete the ray tracing process. This is useful to get a sense of 
+the performance of the ray tracer.
+
+## Features
+
+Currently, the Sloth Ray Tracer supports:
+
+- Rendering of 3D spheres
+- Point and directional lighting
+- Reflection and refraction with configurable material properties
+
+Future planned improvements include:
+
+- Support for more complex 3D shapes
+- Loading scenes from a file
+- Integrating with graphics APIs for hardware-accelerated rendering
 
 ## Contribution
 
@@ -65,3 +88,8 @@ issue or a pull request.
 ## License
 
 This project is open-source, available under the [MIT License](LICENSE).
+
+## References
+
+- [Computer Graphics from Scratch](https://gabrielgambetta.com/computer-graphics-from-scratch/)
+- [Ray Tracing in One Weekend Series](https://raytracing.github.io/)
