@@ -47,6 +47,7 @@ int main(int argc, char* argv[]) {
     scene.spheres.emplace_back(Vec3f(0, -1, 3), 1, Color(255, 0, 0), 500, 0.2);
     scene.spheres.emplace_back(Vec3f(2, 0 , 4), 1, Color(0, 0, 255), 500, 0.3);
     scene.spheres.emplace_back(Vec3f(-2, 0 , 4), 1, Color(0, 255, 0), 10, 0.4);
+    scene.spheres.emplace_back(Vec3f(0, 0 , 10), 1, Color(142, 255, 22), 10, 0.4);
     scene.spheres.emplace_back(Vec3f(0, -5001, 0), 5000, Color(255, 255, 0), 1000, 0.5);
 
     scene.lights.emplace_back(LightType::AMBIENT, Vec3f(), 0.2);
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        engine.RenderScene(canvas, bounces++);
+        engine.MultiThreadedRenderScene(canvas, bounces);
 
         // Update the texture with the image data.
         SDL_UpdateTexture(texture, nullptr, canvas.getData(), SCREEN_WIDTH*4);

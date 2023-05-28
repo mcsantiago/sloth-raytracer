@@ -18,24 +18,37 @@ void RayTracingEngine::setBackgroundColor(Color color) {
 }
 
 Color RayTracingEngine::TraceRay(Vec3f O, Vec3f D, float t_min, float t_max, int num_bounces) {
-    auto intersection_pair= ClosestIntersection(O, D, t_min, t_max);
-    if (intersection_pair.first == -1) {
-        return background_color_;
-    }
-    Sphere& closest_sphere = scene_.spheres[intersection_pair.first];
-    float closest_t = intersection_pair.second;
-    Vec3f P = O + (D * closest_t);
-    Vec3f N = (P - closest_sphere.position).normalize();
-    float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular);
-    Color local_color = closest_sphere.color.MultiplyByIntensity(intensity);
-    if (closest_sphere.reflective <= 0 || num_bounces <= 0) {
-        return local_color;
+    Color accumulatedColor = {0, 0, 0, 255};  // Assuming RGBA representation, initialize to fully transparent.
+    float accumulatedReflection = 1.0f;  // Initial reflection factor.
+
+    for(int i = 0; i < num_bounces; ++i) {
+        auto intersection_pair = ClosestIntersection(O, D, t_min, t_max);
+        if (intersection_pair.first == -1) {
+            accumulatedColor = accumulatedColor.CombineColor(background_color_, accumulatedReflection);
+            break;
+        }
+
+        Sphere& closest_sphere = scene_.spheres[intersection_pair.first];
+        float closest_t = intersection_pair.second;
+        Vec3f P = O + (D * closest_t);
+        Vec3f N = (P - closest_sphere.position).normalize();
+        float intensity = ComputeLighting(P, N, D*-1, closest_sphere.specular);
+
+        Color local_color = closest_sphere.color.MultiplyByIntensity(intensity);
+        accumulatedColor = accumulatedColor.CombineColor(local_color, accumulatedReflection);
+
+        if (closest_sphere.reflective <= 0) {
+            break;
+        }
+
+        accumulatedReflection *= closest_sphere.reflective;
+        D = ReflectRay(D*-1, N);
+        O = P + D * 0.001f;  // Start the next ray just above the surface to avoid self-intersection.
+        t_min = 0.001f;
+        t_max = INF;
     }
 
-    Vec3f R = ReflectRay(D*-1, N);
-    Color reflected_color = this->TraceRay(P, R, 0.001, INF, num_bounces - 1);
-
-    return local_color.CombineColor(reflected_color, closest_sphere.reflective);
+    return accumulatedColor;
 }
 
 Vec3f RayTracingEngine::CanvasToViewport(int x, int y, int canvas_width, int canvas_height) {
@@ -131,7 +144,7 @@ Vec3f RayTracingEngine::ReflectRay(Vec3f R, Vec3f N) {
     return reflected_ray;
 }
 
-void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
+void RayTracingEngine::MultiThreadedRenderScene(Image &canvas, int num_bounces) {
     clock_t t_start = clock();
     Vec3f O = camera_.get_position();
 
@@ -164,4 +177,19 @@ void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
     printf("\tNumber of threads: %zu\n", thread_count);
     printf("\tPixels per thread: %zu\n", pixels_per_thread);
     printf("\tBounces: %d\n", num_bounces);
+}
+
+void RayTracingEngine::RenderScene(Image &canvas, int num_bounces) {
+    clock_t t_start = clock();
+    Vec3f O = camera_.get_position();
+
+    for (int x = -1*canvas.getWidth()/2; x <= canvas.getWidth()/2; x++) {
+        for (int y = -1*canvas.getHeight()/2; y <= canvas.getHeight()/2; y++) {
+            Vec3f D = CanvasToViewport(x, y, canvas.getWidth(), canvas.getHeight());
+            Color color = TraceRay(O, D, 1, INF, num_bounces);
+            canvas.setPixel(x, y, color);
+        }
+    }
+
+    printf("Time taken to complete ray tracing (debug mode will affect this): %.2fs\n", (double) (clock() - t_start)/CLOCKS_PER_SEC);
 }

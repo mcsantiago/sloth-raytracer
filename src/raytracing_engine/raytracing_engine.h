@@ -36,6 +36,8 @@ public:
 
     static Vec3f ReflectRay(Vec3f R, Vec3f N);
     
+    void MultiThreadedRenderScene(Image &canvas, int num_bounces);
+
     void RenderScene(Image &canvas, int num_bounces);
 };
 
